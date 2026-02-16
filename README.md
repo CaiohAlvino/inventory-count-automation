@@ -2,7 +2,7 @@
 
 Sistema desenvolvido em Python para **consolidação de inventário geral** a partir de múltiplos arquivos `.txt`.
 
-O programa lê arquivos de contagem (`.txt`) contendo barcodes no padrão da empresa (`MCS000EXEMPLO`), contabiliza a quantidade de cada produto e preenche automaticamente uma planilha Excel com os dados consolidados e as características correspondentes de cada item.
+O programa lê arquivos de contagem (`.txt`) contendo barcodes no padrão da empresa (`MCS000EXEMPLO`), contabiliza o saldo de cada produto e **atualiza automaticamente** uma planilha Excel já pré-preenchida com o cadastro dos produtos, atribuindo a quantidade física (saldo) correspondente a cada item identificado.
 
 ---
 
@@ -16,7 +16,7 @@ inventory-count-automation/
 ├── data/
 │   ├── input/
 │   │   ├── planilha_base/
-│   │   │   └── modelo_base.xlsx        # Planilha modelo com cabeçalhos e formatação
+│   │   │   └── modelo_base.xlsx        # Planilha pré-preenchida com ~4000 produtos cadastrados
 │   │   └── txt/
 │   │       ├── contagem_01.txt          # Arquivos de contagem (barcodes)
 │   │       ├── contagem_02.txt
@@ -30,7 +30,7 @@ inventory-count-automation/
 │       ├── config.py                    # Constantes e configurações (paths, regex, etc.)
 │       ├── reader.py                    # Leitura e parsing dos arquivos .txt
 │       ├── counter.py                   # Contabilização e agrupamento dos barcodes
-│       └── excel_handler.py             # Leitura da planilha base e escrita do output
+│       └── excel_handler.py             # Identificação dos produtos na planilha e atribuição dos saldos
 └── tests/
     ├── __init__.py
     ├── test_reader.py
@@ -56,29 +56,32 @@ O sistema opera em **3 etapas principais**:
 - Conta a quantidade de ocorrências (quantidade física) de cada barcode único.
 - Gera um dicionário `{barcode: quantidade}` consolidado.
 
-### 3. Geração da planilha de saída (`excel_handler.py`)
+### 3. Atribuição de saldos na planilha (`excel_handler.py`)
 
-- Carrega a planilha modelo (`data/input/planilha_base/modelo_base.xlsx`) que possui a seguinte estrutura de colunas (a partir da linha 2):
+- Carrega a planilha **pré-preenchida** (`data/input/planilha_base/modelo_base.xlsx`) que já contém **~4.000 produtos cadastrados** com todas as suas características. Estrutura de colunas (a partir da linha 2):
 
-| Coluna | Campo         | Descrição                              |
-|--------|---------------|----------------------------------------|
-| B      | Empresa       | Identificador da empresa               |
-| C      | SKU           | Código interno do produto              |
-| D      | Descrição     | Nome/descrição do produto              |
-| E      | Posição       | Localização no estoque                 |
-| F      | Depósito      | Depósito de armazenagem                |
-| G      | Barcode       | Código de barras (`MCS000...`)         |
-| H      | Volume/Série  | Volume ou número de série              |
-| I      | Nº NF         | Número da nota fiscal                  |
-| J      | Data          | Data de entrada                        |
-| K      | Lote          | Lote do produto                        |
-| L      | Centro Custo  | Centro de custo associado              |
-| M      | QTD Físico    | Quantidade contada fisicamente         |
-| N      | QTD ALT       | Quantidade alterada                    |
-| O      | Disponível    | Quantidade disponível                  |
+| Coluna | Campo         | Descrição                              | Ação do sistema        |
+|--------|---------------|----------------------------------------|------------------------|
+| B      | Empresa       | Identificador da empresa               | —                      |
+| C      | SKU           | Código interno do produto              | —                      |
+| D      | Descrição     | Nome/descrição do produto              | —                      |
+| E      | Posição       | Localização no estoque                 | —                      |
+| F      | Depósito      | Depósito de armazenagem                | —                      |
+| G      | Barcode       | Código de barras (`MCS000...`)         | **Chave de busca** 🔍  |
+| H      | Volume/Série  | Volume ou número de série              | —                      |
+| I      | Nº NF         | Número da nota fiscal                  | —                      |
+| J      | Data          | Data de entrada                        | —                      |
+| K      | Lote          | Lote do produto                        | —                      |
+| L      | Centro Custo  | Centro de custo associado              | —                      |
+| M      | QTD Físico    | Quantidade contada fisicamente         | **Saldo atribuído** ✏️ |
+| N      | QTD ALT       | Quantidade alterada                    | —                      |
+| O      | Disponível    | Quantidade disponível                  | —                      |
 
-- Para cada barcode contabilizado, uma linha é preenchida na planilha com o barcode na coluna **G** e a quantidade física na coluna **M**.
-- O arquivo final é salvo em `data/output/inventario_consolidado.xlsx`.
+- O sistema **percorre** a coluna **G (Barcode)** da planilha, buscando correspondência com cada barcode contabilizado.
+- Ao encontrar o barcode, **atribui o saldo** (quantidade contada) na coluna **M (QTD Físico)** da mesma linha.
+- Produtos que existem na planilha mas **não foram contados** permanecem inalterados.
+- Barcodes lidos nos `.txt` que **não existem na planilha** são reportados no log como "não encontrados".
+- O arquivo final é salvo em `data/output/inventario_consolidado.xlsx` (a planilha original não é alterada).
 
 ---
 
@@ -117,7 +120,7 @@ poetry install
 ### 1. Preparar os dados de entrada
 
 - Coloque os arquivos `.txt` de contagem em `data/input/txt/`.
-- Certifique-se de que a planilha modelo está em `data/input/planilha_base/modelo_base.xlsx`.
+- Certifique-se de que a planilha **pré-preenchida** (com todos os produtos cadastrados) está em `data/input/planilha_base/modelo_base.xlsx`.
 
 ### 2. Executar o sistema
 
@@ -175,6 +178,18 @@ poetry run pytest
 # Executar em modo desenvolvimento
 poetry run python -m inventory_count_automation
 ```
+
+---
+
+## Performance
+
+| Cenário                                      | Expectativa         |
+|----------------------------------------------|---------------------|
+| ~4.000 produtos na planilha                   | ✅ Sem problemas     |
+| 10.000+ registros de barcode nos `.txt`       | ✅ Sem problemas     |
+| 50.000+ registros (cenário extremo)           | ✅ Funcional (~seg)  |
+
+O `openpyxl` trabalha com a planilha carregada em memória e a busca de barcodes utiliza um **dicionário indexado** (`O(1)` por lookup), de modo que o volume mencionado é processado em **poucos segundos**.
 
 ---
 
