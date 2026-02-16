@@ -3,13 +3,14 @@ name = "inventory-count-automation"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Caio Alvino",email = "caioh.alvino22@gmail.com"}
+    { name = "Caio Alvino", email = "caioh.alvino22@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = [
-]
+dependencies = []
 
+[tool.poetry]
+packages = [{ include = "inventory_count_automation", from = "src" }]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
