@@ -14,15 +14,12 @@ inventory-count-automation/
 ├── pyproject.toml
 ├── README.md
 ├── data/
-│   ├── input/
-│   │   ├── planilha_base/
-│   │   │   └── modelo_base.xlsx        # Planilha pré-preenchida com ~4000 produtos cadastrados
-│   │   └── txt/
-│   │       ├── contagem_01.txt          # Arquivos de contagem (barcodes)
-│   │       ├── contagem_02.txt
-│   │       └── ...
-│   └── output/
-│       └── inventario_consolidado.xlsx  # Resultado final gerado pelo sistema
+│   ├── planilha/
+│   │   └── modelo_base.xlsx            # Planilha pré-preenchida com ~4000 produtos cadastrados
+│   └── txt/
+│       ├── contagem_01.txt              # Arquivos de contagem (barcodes)
+│       ├── contagem_02.txt
+│       └── ...
 ├── src/
 │   └── inventory_count_automation/
 │       ├── __init__.py
@@ -46,7 +43,7 @@ O sistema opera em **3 etapas principais**:
 
 ### 1. Leitura dos arquivos `.txt` (`reader.py`)
 
-- Varre o diretório `data/input/txt/` e coleta todos os arquivos `.txt`.
+- Varre o diretório `data/txt/` e coleta todos os arquivos `.txt`.
 - Cada arquivo contém uma lista de barcodes (um por linha), representando itens lidos via coletor ou scanner.
 - Filtra apenas os barcodes que seguem o padrão da empresa: **`MCS000XXXXXXX`** (validação via regex).
 
@@ -58,7 +55,7 @@ O sistema opera em **3 etapas principais**:
 
 ### 3. Atribuição de saldos na planilha (`excel_handler.py`)
 
-- Carrega a planilha **pré-preenchida** (`data/input/planilha_base/modelo_base.xlsx`) que já contém **~4.000 produtos cadastrados** com todas as suas características. Estrutura de colunas (a partir da linha 2):
+- Carrega a planilha **pré-preenchida** (`data/planilha/modelo_base.xlsx`) que já contém **~4.000 produtos cadastrados** com todas as suas características. Estrutura de colunas (a partir da linha 2):
 
 | Coluna | Campo         | Descrição                              | Ação do sistema        |
 |--------|---------------|----------------------------------------|------------------------|
@@ -81,7 +78,7 @@ O sistema opera em **3 etapas principais**:
 - Ao encontrar o barcode, **atribui o saldo** (quantidade contada) na coluna **M (QTD Físico)** da mesma linha.
 - Produtos que existem na planilha mas **não foram contados** permanecem inalterados.
 - Barcodes lidos nos `.txt` que **não existem na planilha** são reportados no log como "não encontrados".
-- O arquivo final é salvo em `data/output/inventario_consolidado.xlsx` (a planilha original não é alterada).
+- As alterações são salvas **diretamente na planilha original** (`modelo_base.xlsx`).
 
 ---
 
@@ -119,8 +116,8 @@ poetry install
 
 ### 1. Preparar os dados de entrada
 
-- Coloque os arquivos `.txt` de contagem em `data/input/txt/`.
-- Certifique-se de que a planilha **pré-preenchida** (com todos os produtos cadastrados) está em `data/input/planilha_base/modelo_base.xlsx`.
+- Coloque os arquivos `.txt` de contagem em `data/txt/`.
+- Certifique-se de que a planilha **pré-preenchida** (com todos os produtos cadastrados) está em `data/planilha/modelo_base.xlsx`.
 
 ### 2. Executar o sistema
 
@@ -130,11 +127,7 @@ poetry run python -m inventory_count_automation
 
 ### 3. Resultado
 
-O arquivo consolidado será gerado em:
-
-```
-data/output/inventario_consolidado.xlsx
-```
+A planilha original em `data/planilha/modelo_base.xlsx` será atualizada com os saldos contados.
 
 ---
 

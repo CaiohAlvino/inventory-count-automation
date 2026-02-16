@@ -43,26 +43,31 @@ def sample_workbook(tmp_path: Path) -> tuple[openpyxl.Workbook, Path]:
         for col, value in prod.items():
             ws[f"{col}{i}"] = value
 
-    output_path = tmp_path / "output" / "resultado.xlsx"
-    return wb, output_path
+    # Salva num arquivo temporário (simula a planilha original)
+    planilha_path = tmp_path / "planilha.xlsx"
+    wb.save(planilha_path)
+
+    # Recarrega para simular o fluxo real
+    wb = openpyxl.load_workbook(planilha_path)
+    return wb, planilha_path
 
 
 class TestAssignBalances:
     def test_assigns_correct_quantities(self, sample_workbook) -> None:
-        wb, output_path = sample_workbook
+        wb, planilha_path = sample_workbook
         counted = {
             "MCS000PROD001": 5,
             "MCS000PROD003": 12,
         }
 
-        result = assign_balances(counted, wb=wb, output_path=output_path)
+        result = assign_balances(counted, wb=wb, save_path=planilha_path)
 
         assert "MCS000PROD001" in result["matched"]
         assert "MCS000PROD003" in result["matched"]
         assert len(result["not_found"]) == 0
 
-        # Verifica os valores escritos na planilha salva
-        wb_check = openpyxl.load_workbook(output_path)
+        # Verifica os valores escritos na planilha (recarrega do disco)
+        wb_check = openpyxl.load_workbook(planilha_path)
         ws = wb_check.active
         if ws is None:
             raise RuntimeError("Workbook sem planilha ativa.")
@@ -72,27 +77,27 @@ class TestAssignBalances:
         assert ws["M4"].value is None  # PROD002
 
     def test_reports_not_found_barcodes(self, sample_workbook) -> None:
-        wb, output_path = sample_workbook
+        wb, planilha_path = sample_workbook
         counted = {
             "MCS000PROD001": 3,
             "MCS000FANTASMA": 7,
         }
 
-        result = assign_balances(counted, wb=wb, output_path=output_path)
+        result = assign_balances(counted, wb=wb, save_path=planilha_path)
 
         assert "MCS000PROD001" in result["matched"]
         assert "MCS000FANTASMA" in result["not_found"]
 
     def test_empty_counted(self, sample_workbook) -> None:
-        wb, output_path = sample_workbook
-        result = assign_balances({}, wb=wb, output_path=output_path)
+        wb, planilha_path = sample_workbook
+        result = assign_balances({}, wb=wb, save_path=planilha_path)
 
         assert result["matched"] == []
         assert result["not_found"] == []
 
     def test_case_insensitive_matching(self, sample_workbook) -> None:
-        wb, output_path = sample_workbook
+        wb, planilha_path = sample_workbook
         counted = {"MCS000PROD002": 10}
 
-        result = assign_balances(counted, wb=wb, output_path=output_path)
+        result = assign_balances(counted, wb=wb, save_path=planilha_path)
         assert "MCS000PROD002" in result["matched"]

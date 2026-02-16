@@ -7,12 +7,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 
-INPUT_TXT_DIR = DATA_DIR / "input" / "txt"
-INPUT_PLANILHA_DIR = DATA_DIR / "input" / "planilha_base"
-OUTPUT_DIR = DATA_DIR / "output"
+INPUT_TXT_DIR = DATA_DIR / "txt"
+INPUT_PLANILHA_DIR = DATA_DIR / "planilha"
 
 PLANILHA_BASE_FILENAME = "modelo_base.xlsx"
-OUTPUT_FILENAME = "inventario_consolidado.xlsx"
 
 # ── Planilha ────────────────────────────────────────────────────────────
 HEADER_ROW = 2          # Linha dos cabeçalhos

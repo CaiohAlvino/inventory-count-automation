@@ -9,8 +9,6 @@ from inventory_count_automation.config import (
     COL_QTD_FISICO,
     DATA_START_ROW,
     INPUT_PLANILHA_DIR,
-    OUTPUT_DIR,
-    OUTPUT_FILENAME,
     PLANILHA_BASE_FILENAME,
 )
 
@@ -32,24 +30,29 @@ def _build_barcode_index(ws, col_barcode: str, start_row: int) -> dict[str, int]
     return index
 
 
-def load_workbook(filepath: Path | None = None) -> openpyxl.Workbook:
-    """Carrega a planilha base do caminho padrão ou de um caminho customizado."""
+def _default_planilha_path() -> Path:
+    """Retorna o caminho padrão da planilha base."""
+    return INPUT_PLANILHA_DIR / PLANILHA_BASE_FILENAME
+
+
+def load_workbook(filepath: Path | None = None) -> tuple[openpyxl.Workbook, Path]:
+    """Carrega a planilha base e retorna (workbook, caminho_do_arquivo)."""
     if filepath is None:
-        filepath = INPUT_PLANILHA_DIR / PLANILHA_BASE_FILENAME
+        filepath = _default_planilha_path()
 
     if not filepath.exists():
-        raise FileNotFoundError(f"Planilha base não encontrada: {filepath}")
+        raise FileNotFoundError(f"Planilha não encontrada: {filepath}")
 
-    return openpyxl.load_workbook(filepath)
+    return openpyxl.load_workbook(filepath), filepath
 
 
 def assign_balances(
     counted: dict[str, int],
     wb: openpyxl.Workbook | None = None,
-    output_path: Path | None = None,
+    save_path: Path | None = None,
 ) -> dict[str, list[str]]:
     """
-    Atribui os saldos contados na planilha.
+    Atribui os saldos contados diretamente na planilha original.
 
     Parâmetros
     ----------
@@ -57,8 +60,8 @@ def assign_balances(
         Dicionário {barcode: quantidade} gerado pelo counter.
     wb : Workbook, opcional
         Workbook já carregado; se None, carrega do caminho padrão.
-    output_path : Path, opcional
-        Caminho de saída; se None, usa o padrão.
+    save_path : Path, opcional
+        Caminho onde salvar; se None, salva no próprio arquivo original.
 
     Retorna
     -------
@@ -67,17 +70,16 @@ def assign_balances(
         - "not_found"   : barcodes lidos nos .txt mas ausentes na planilha
     """
     if wb is None:
-        wb = load_workbook()
+        wb, original_path = load_workbook()
+    else:
+        original_path = save_path if save_path is not None else Path(".")
 
     ws = wb.active
     if ws is None:
         raise ValueError("Workbook não possui uma planilha ativa")
 
-    if output_path is None:
-        output_path = OUTPUT_DIR / OUTPUT_FILENAME
-
-    # Garante que o diretório de saída existe
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if save_path is None:
+        save_path = original_path
 
     # Indexa barcode → linha da planilha
     barcode_index = _build_barcode_index(ws, COL_BARCODE, DATA_START_ROW)
@@ -93,7 +95,7 @@ def assign_balances(
         else:
             not_found.append(barcode)
 
-    wb.save(output_path)
+    wb.save(save_path)
 
     # ── Log de resultado ────────────────────────────────────────────────
     print(f"  ✅ Produtos atualizados na planilha: {len(matched)}")
@@ -103,6 +105,6 @@ def assign_balances(
         for bc in not_found:
             print(f"      • {bc}")
 
-    print(f"  💾 Arquivo salvo em: {output_path}")
+    print(f"  💾 Planilha atualizada: {save_path}")
 
     return {"matched": matched, "not_found": not_found}
