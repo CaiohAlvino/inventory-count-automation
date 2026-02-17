@@ -10,7 +10,7 @@ DATA_DIR = ROOT_DIR / "data"
 INPUT_TXT_DIR = DATA_DIR / "txt"
 INPUT_PLANILHA_DIR = DATA_DIR / "planilha"
 
-PLANILHA_BASE_FILENAME = "modelo_base.xlsx"
+PLANILHA_BASE_FILENAME = "Planilha de Inventário_Musical Center.xlsx"
 
 # ── Planilha ────────────────────────────────────────────────────────────
 HEADER_ROW = 2          # Linha dos cabeçalhos

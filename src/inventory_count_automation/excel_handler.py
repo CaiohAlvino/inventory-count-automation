@@ -101,9 +101,7 @@ def assign_balances(
     print(f"  ✅ Produtos atualizados na planilha: {len(matched)}")
 
     if not_found:
-        print(f"  ⚠️  Barcodes NÃO encontrados na planilha: {len(not_found)}")
-        for bc in not_found:
-            print(f"      • {bc}")
+        print(f"  ⚠️  Barcodes ignorados (não encontrados na planilha): {len(not_found)}")
 
     print(f"  💾 Planilha atualizada: {save_path}")
 
