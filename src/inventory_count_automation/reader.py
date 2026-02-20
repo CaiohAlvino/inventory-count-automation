@@ -1,9 +1,7 @@
 """Leitura e parsing dos arquivos .txt de contagem."""
-
 from pathlib import Path
 
-from inventory_count_automation.config import BARCODE_PATTERN, INPUT_TXT_DIR
-
+from inventory_count_automation.settings import LayoutConfig, INPUT_TXT_DIR
 
 def list_txt_files(directory: Path = INPUT_TXT_DIR) -> list[Path]:
     """Retorna todos os arquivos .txt do diretório informado, ordenados por nome."""
@@ -17,7 +15,7 @@ def list_txt_files(directory: Path = INPUT_TXT_DIR) -> list[Path]:
     return files
 
 
-def parse_barcodes_from_file(filepath: Path) -> list[str]:
+def parse_barcodes_from_file(filepath: Path, layout: LayoutConfig) -> list[str]:
     """
     Lê um arquivo .txt e retorna a lista de barcodes válidos.
 
@@ -29,13 +27,13 @@ def parse_barcodes_from_file(filepath: Path) -> list[str]:
     with filepath.open("r", encoding="utf-8") as f:
         for line in f:
             raw = line.strip()
-            if raw and BARCODE_PATTERN.match(raw):
+            if raw and layout.compiled_barcode_pattern.match(raw):
                 barcodes.append(raw.upper())
 
     return barcodes
 
 
-def read_all_barcodes(directory: Path = INPUT_TXT_DIR) -> list[str]:
+def read_all_barcodes(layout: LayoutConfig, directory: Path = INPUT_TXT_DIR) -> list[str]:
     """
     Varre todos os .txt do diretório e retorna a lista consolidada de barcodes.
 
@@ -45,7 +43,7 @@ def read_all_barcodes(directory: Path = INPUT_TXT_DIR) -> list[str]:
     all_barcodes: list[str] = []
 
     for filepath in files:
-        barcodes = parse_barcodes_from_file(filepath)
+        barcodes = parse_barcodes_from_file(filepath, layout)
         print(f"  📄 {filepath.name}: {len(barcodes)} barcodes lidos")
         all_barcodes.extend(barcodes)
 

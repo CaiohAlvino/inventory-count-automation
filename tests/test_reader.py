@@ -5,12 +5,17 @@ from pathlib import Path
 
 import pytest
 
+from inventory_count_automation.settings import LayoutConfig
 from inventory_count_automation.reader import (
     list_txt_files,
     parse_barcodes_from_file,
     read_all_barcodes,
 )
 
+
+@pytest.fixture
+def layout() -> LayoutConfig:
+    return LayoutConfig(barcode_pattern=r"^MCS\d{3}\S+$")
 
 @pytest.fixture
 def tmp_txt_dir(tmp_path: Path) -> Path:
@@ -53,25 +58,25 @@ class TestListTxtFiles:
 
 
 class TestParseBarcodes:
-    def test_parses_valid_barcodes(self, tmp_txt_dir: Path) -> None:
-        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt")
+    def test_parses_valid_barcodes(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
         assert barcodes == ["MCS000PROD001", "MCS000PROD002", "MCS000PROD001", "MCS000PROD003"]
 
-    def test_ignores_invalid_lines(self, tmp_txt_dir: Path) -> None:
-        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt")
+    def test_ignores_invalid_lines(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
         assert "linha_invalida" not in barcodes
         assert "" not in barcodes
 
-    def test_uppercases_barcodes(self, tmp_path: Path) -> None:
+    def test_uppercases_barcodes(self, tmp_path: Path, layout: LayoutConfig) -> None:
         f = tmp_path / "lower.txt"
         f.write_text("mcs000produto\n", encoding="utf-8")
-        barcodes = parse_barcodes_from_file(f)
+        barcodes = parse_barcodes_from_file(f, layout)
         assert barcodes == ["MCS000PRODUTO"]
 
 
 class TestReadAllBarcodes:
-    def test_consolidates_all_files(self, tmp_txt_dir: Path) -> None:
-        all_barcodes = read_all_barcodes(tmp_txt_dir)
+    def test_consolidates_all_files(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        all_barcodes = read_all_barcodes(layout, tmp_txt_dir)
         assert len(all_barcodes) == 6  # 4 do file1 + 2 do file2
         assert all_barcodes.count("MCS000PROD001") == 2
         assert all_barcodes.count("MCS000PROD002") == 2

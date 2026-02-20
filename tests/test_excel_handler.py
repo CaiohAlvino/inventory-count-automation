@@ -5,8 +5,12 @@ from pathlib import Path
 import openpyxl
 import pytest
 
+from inventory_count_automation.settings import LayoutConfig
 from inventory_count_automation.excel_handler import assign_balances
 
+@pytest.fixture
+def layout() -> LayoutConfig:
+    return LayoutConfig()
 
 @pytest.fixture
 def sample_workbook(tmp_path: Path) -> tuple[openpyxl.Workbook, Path]:
@@ -53,14 +57,13 @@ def sample_workbook(tmp_path: Path) -> tuple[openpyxl.Workbook, Path]:
 
 
 class TestAssignBalances:
-    def test_assigns_correct_quantities(self, sample_workbook) -> None:
+    def test_assigns_correct_quantities(self, sample_workbook, layout: LayoutConfig) -> None:
         wb, planilha_path = sample_workbook
         counted = {
             "MCS000PROD001": 5,
             "MCS000PROD003": 12,
         }
-
-        result = assign_balances(counted, wb=wb, save_path=planilha_path)
+        result = assign_balances(layout, counted, wb=wb, save_path=planilha_path)
 
         assert "MCS000PROD001" in result["matched"]
         assert "MCS000PROD003" in result["matched"]
@@ -76,28 +79,28 @@ class TestAssignBalances:
         # Produtos não contados devem permanecer sem valor
         assert ws["M4"].value is None  # PROD002
 
-    def test_reports_not_found_barcodes(self, sample_workbook) -> None:
+    def test_reports_not_found_barcodes(self, sample_workbook, layout: LayoutConfig) -> None:
         wb, planilha_path = sample_workbook
         counted = {
             "MCS000PROD001": 3,
             "MCS000FANTASMA": 7,
         }
 
-        result = assign_balances(counted, wb=wb, save_path=planilha_path)
+        result = assign_balances(layout, counted, wb=wb, save_path=planilha_path)
 
         assert "MCS000PROD001" in result["matched"]
         assert "MCS000FANTASMA" in result["not_found"]
 
-    def test_empty_counted(self, sample_workbook) -> None:
+    def test_empty_counted(self, sample_workbook, layout: LayoutConfig) -> None:
         wb, planilha_path = sample_workbook
-        result = assign_balances({}, wb=wb, save_path=planilha_path)
+        result = assign_balances(layout, {}, wb=wb, save_path=planilha_path)
 
         assert result["matched"] == []
         assert result["not_found"] == []
 
-    def test_case_insensitive_matching(self, sample_workbook) -> None:
+    def test_case_insensitive_matching(self, sample_workbook, layout: LayoutConfig) -> None:
         wb, planilha_path = sample_workbook
         counted = {"MCS000PROD002": 10}
 
-        result = assign_balances(counted, wb=wb, save_path=planilha_path)
+        result = assign_balances(layout, counted, wb=wb, save_path=planilha_path)
         assert "MCS000PROD002" in result["matched"]

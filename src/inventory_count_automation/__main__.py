@@ -2,12 +2,16 @@
 
 import sys
 
+from inventory_count_automation.settings import AppConfig
 from inventory_count_automation.counter import count_barcodes, summary
 from inventory_count_automation.excel_handler import assign_balances
 from inventory_count_automation.reader import read_all_barcodes
 
 
 def main() -> None:
+    config = AppConfig()
+    layout = config.active
+
     print("=" * 60)
     print("  INVENTORY COUNT AUTOMATION")
     print("  Consolidação de Inventário")
@@ -16,7 +20,7 @@ def main() -> None:
     # ── Etapa 1: Leitura dos arquivos .txt ──────────────────────────────
     print("\n📂 Etapa 1 — Leitura dos arquivos .txt")
     try:
-        all_barcodes = read_all_barcodes()
+        all_barcodes = read_all_barcodes(layout)
     except FileNotFoundError as e:
         print(f"\n❌ Erro: {e}")
         sys.exit(1)
@@ -33,7 +37,7 @@ def main() -> None:
     # ── Etapa 3: Atribuição na planilha ─────────────────────────────────
     print("\n📊 Etapa 3 — Atribuição de saldos na planilha")
     try:
-        result = assign_balances(counted)
+        result = assign_balances(layout, counted)
     except FileNotFoundError as e:
         print(f"\n❌ Erro: {e}")
         sys.exit(1)
