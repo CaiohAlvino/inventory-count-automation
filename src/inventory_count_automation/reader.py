@@ -1,4 +1,3 @@
-"""Leitura e parsing dos arquivos .txt de contagem."""
 from pathlib import Path
 
 from inventory_count_automation.settings import LayoutConfig, INPUT_TXT_DIR

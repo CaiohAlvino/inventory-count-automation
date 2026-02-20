@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 INPUT_TXT_DIR = DATA_DIR / "txt"
 CONFIG_PATH = DATA_DIR / "config.toml"
-INPUT_PLANILHA_DIR = DATA_DIR / "planilha"
+INPUT_PLANILHA_DIR = DATA_DIR / "planilhas"
 
 @dataclasses.dataclass
 class LayoutConfig:
@@ -19,14 +19,14 @@ class LayoutConfig:
     description: str = ""        # Descrição do item
 
     # ── Planilha ──────────────────────────────────────────────────────────────
-    planilha_filename: str = "Planilha de Inventário_Musical Center.xlsx"
+    planilha_filename: str = "Planilha de Inventário Base.xlsx"
 
-    header_row: int = 2          # Linha dos cabeçalhos
-    data_start_row: int = 3      # Primeira linha de dados
+    header_row: int = 1          # Linha dos cabeçalhos
+    data_start_row: int = 2      # Primeira linha de dados
 
     # ── Colunas primárias ─────────────────────────────────────────────────────
-    col_chave_busca: str = "G"   # Coluna com o identificador principal (SKU, EAN, etc.)
-    col_qtd_fisico: str = "M"    # Coluna onde o saldo será atribuído
+    col_chave_busca: str = "A"   # Coluna com o identificador principal (SKU, EAN, etc.)
+    col_qtd_fisico: str = "Z"    # Coluna onde o saldo será atribuído
 
     # ── Colunas secundárias ───────────────────────────────────────────────────
     col_ean: str = ""            # Coluna com o código EAN
@@ -35,22 +35,29 @@ class LayoutConfig:
     col_descricao: str = ""      # Coluna com a descrição do item
     col_sku: str = ""            # Coluna com o SKU do item
 
-    # ── Barcode pattern and configuration ─────────────────────────────────────
-    barcode_pattern: str = ""    # Exemplo: MCS00012345, MCS000EXEMPLO, etc.
+    # ── Barcode — prefixo e sufixo ───────────────────────────────────────────
+    barcode_prefix: str = ""    # Prefixo obrigatório do código (ex: "MCS000")
+    barcode_suffix: str = ""    # Sufixo obrigatório do código (ex: "BR")
 
     @property
     def compiled_barcode_pattern(self) -> re.Pattern[str]:
-        if not self.barcode_pattern:
-            return re.compile(r"^.+$")  # aceita qualquer linha não-vazia
-        return re.compile(self.barcode_pattern, re.IGNORECASE)
+        """ Constrói o regex a partir do prefixo e sufixo informados pelo usuário. """
+        if not self.barcode_prefix and not self.barcode_suffix:
+            return re.compile(r"^.+$")  # sem filtro — aceita qualquer linha não-vazia
+
+        prefix = re.escape(self.barcode_prefix)
+        suffix = re.escape(self.barcode_suffix)
+
+        if prefix and suffix:
+            pattern = f"^{prefix}\\S+{suffix}$"
+        elif prefix:
+            pattern = f"^{prefix}\\S+$"
+        else:
+            pattern = f"^\\S+{suffix}$"
+
+        return re.compile(pattern, re.IGNORECASE)
 
     def __post_init__(self) -> None:
-        # Aqui dentro, faça as validações:
-        # 1. header_row >= 1 (senão ValueError)
-        # 2. data_start_row > header_row (senão ValueError)
-        # 3. col_chave_busca não pode ser vazio (senão ValueError)
-        # 4. col_qtd_fisico não pode ser vazio (senão ValueError)
-        # 5. tente re.compile(self.barcode_pattern) — se der re.error, lance ValueError com mensagem clara
         if self.header_row < 1:
             raise ValueError(f"header_row (Linha onde os cabeçalhos estão) deve ser maior ou igual a 1.")
 
@@ -62,12 +69,6 @@ class LayoutConfig:
 
         if not self.col_qtd_fisico:
             raise ValueError("col_qtd_fisico (coluna onde o saldo físico será atribuído) não pode ser vazio.")
-
-        if self.barcode_pattern:
-            try:
-                re.compile(self.barcode_pattern)
-            except re.error as e:
-                raise ValueError(f"barcode_pattern é inválido: {e}") from e
 
 @dataclasses.dataclass
 class AppConfig:

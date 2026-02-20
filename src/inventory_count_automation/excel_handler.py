@@ -1,11 +1,7 @@
-"""Identificação dos produtos na planilha e atribuição dos saldos contados."""
-
 from pathlib import Path
-
 import openpyxl
 
 from inventory_count_automation.settings import LayoutConfig, INPUT_PLANILHA_DIR
-
 
 def _build_barcode_index(ws, col_barcode: str, start_row: int) -> dict[str, int]:
     """

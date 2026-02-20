@@ -1,14 +1,19 @@
-"""Ponto de entrada do sistema de consolidação de inventário."""
-
 import sys
 
 from inventory_count_automation.settings import load_config, CONFIG_PATH
 from inventory_count_automation.counter import count_barcodes, summary
 from inventory_count_automation.excel_handler import assign_balances
 from inventory_count_automation.reader import read_all_barcodes
+from inventory_count_automation.cli import run_setup
 
 
 def main() -> None:
+    # Se pediu setup, executa e sai
+    if "--setup" in sys.argv:
+        run_setup()
+        return
+
+    # Caso contrário, executa o processamento normal
     config = load_config(CONFIG_PATH)
     layout = config.active
 

@@ -15,7 +15,7 @@ from inventory_count_automation.reader import (
 
 @pytest.fixture
 def layout() -> LayoutConfig:
-    return LayoutConfig(barcode_pattern=r"^MCS\d{3}\S+$")
+    return LayoutConfig(barcode_prefix="MCS000")
 
 @pytest.fixture
 def tmp_txt_dir(tmp_path: Path) -> Path:
