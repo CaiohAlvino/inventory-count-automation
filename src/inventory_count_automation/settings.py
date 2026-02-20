@@ -16,7 +16,7 @@ class LayoutConfig:
     """Configurações e constantes do projeto."""
 
     # ── Metadados ─────────────────────────────────────────────────────────────
-    description: str = ""        # Descrição do item
+    description: str = "Essa é a configuração base"
 
     # ── Planilha ──────────────────────────────────────────────────────────────
     planilha_filename: str = "Planilha de Inventário Base.xlsx"
