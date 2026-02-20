@@ -1,0 +1,29 @@
+active_layout = "default"
+
+[layouts.default]
+description = ""
+planilha_filename = "Planilha de Inventário Base.xlsx"
+header_row = 1
+data_start_row = 2
+col_chave_busca = "G"
+col_qtd_fisico = "M"
+col_ean = ""
+col_cod_sistema = ""
+col_cod_xml = ""
+col_descricao = ""
+col_sku = ""
+barcode_pattern = ""
+
+[layouts."musical center som"]
+description = "Inventario da Musical"
+planilha_filename = "Planilha de Inventário_Musical Center.xlsx"
+header_row = 2
+data_start_row = 3
+col_chave_busca = "G"
+col_qtd_fisico = "M"
+col_ean = ""
+col_cod_sistema = "C"
+col_cod_xml = ""
+col_descricao = "D"
+col_sku = "G"
+barcode_pattern = "MCS000"

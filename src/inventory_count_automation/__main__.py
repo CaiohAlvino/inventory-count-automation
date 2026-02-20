@@ -1,13 +1,22 @@
-"""Ponto de entrada do sistema de consolidação de inventário."""
-
 import sys
 
+from inventory_count_automation.settings import load_config, CONFIG_PATH
 from inventory_count_automation.counter import count_barcodes, summary
 from inventory_count_automation.excel_handler import assign_balances
 from inventory_count_automation.reader import read_all_barcodes
+from inventory_count_automation.cli import run_setup
 
 
 def main() -> None:
+    # Se pediu setup, executa e sai
+    if "--setup" in sys.argv:
+        run_setup()
+        return
+
+    # Caso contrário, executa o processamento normal
+    config = load_config(CONFIG_PATH)
+    layout = config.active
+
     print("=" * 60)
     print("  INVENTORY COUNT AUTOMATION")
     print("  Consolidação de Inventário")
@@ -16,7 +25,7 @@ def main() -> None:
     # ── Etapa 1: Leitura dos arquivos .txt ──────────────────────────────
     print("\n📂 Etapa 1 — Leitura dos arquivos .txt")
     try:
-        all_barcodes = read_all_barcodes()
+        all_barcodes = read_all_barcodes(layout)
     except FileNotFoundError as e:
         print(f"\n❌ Erro: {e}")
         sys.exit(1)
@@ -33,7 +42,7 @@ def main() -> None:
     # ── Etapa 3: Atribuição na planilha ─────────────────────────────────
     print("\n📊 Etapa 3 — Atribuição de saldos na planilha")
     try:
-        result = assign_balances(counted)
+        result = assign_balances(layout, counted)
     except FileNotFoundError as e:
         print(f"\n❌ Erro: {e}")
         sys.exit(1)

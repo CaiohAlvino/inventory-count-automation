@@ -1,5 +1,3 @@
-"""Contabilização e agrupamento dos barcodes lidos."""
-
 from collections import Counter
 
 

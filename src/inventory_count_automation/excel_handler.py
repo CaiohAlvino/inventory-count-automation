@@ -1,17 +1,7 @@
-"""Identificação dos produtos na planilha e atribuição dos saldos contados."""
-
 from pathlib import Path
-
 import openpyxl
 
-from inventory_count_automation.config import (
-    COL_BARCODE,
-    COL_QTD_FISICO,
-    DATA_START_ROW,
-    INPUT_PLANILHA_DIR,
-    PLANILHA_BASE_FILENAME,
-)
-
+from inventory_count_automation.settings import LayoutConfig, INPUT_PLANILHA_DIR
 
 def _build_barcode_index(ws, col_barcode: str, start_row: int) -> dict[str, int]:
     """
@@ -30,15 +20,15 @@ def _build_barcode_index(ws, col_barcode: str, start_row: int) -> dict[str, int]
     return index
 
 
-def _default_planilha_path() -> Path:
+def _default_planilha_path(layout: LayoutConfig) -> Path:
     """Retorna o caminho padrão da planilha base."""
-    return INPUT_PLANILHA_DIR / PLANILHA_BASE_FILENAME
+    return INPUT_PLANILHA_DIR / layout.planilha_filename
 
 
-def load_workbook(filepath: Path | None = None) -> tuple[openpyxl.Workbook, Path]:
+def load_workbook(layout: LayoutConfig, filepath: Path | None = None) -> tuple[openpyxl.Workbook, Path]:
     """Carrega a planilha base e retorna (workbook, caminho_do_arquivo)."""
     if filepath is None:
-        filepath = _default_planilha_path()
+        filepath = _default_planilha_path(layout)
 
     if not filepath.exists():
         raise FileNotFoundError(f"Planilha não encontrada: {filepath}")
@@ -47,6 +37,7 @@ def load_workbook(filepath: Path | None = None) -> tuple[openpyxl.Workbook, Path
 
 
 def assign_balances(
+    layout: LayoutConfig,
     counted: dict[str, int],
     wb: openpyxl.Workbook | None = None,
     save_path: Path | None = None,
@@ -70,7 +61,7 @@ def assign_balances(
         - "not_found"   : barcodes lidos nos .txt mas ausentes na planilha
     """
     if wb is None:
-        wb, original_path = load_workbook()
+        wb, original_path = load_workbook(layout)
     else:
         original_path = save_path if save_path is not None else Path(".")
 
@@ -82,7 +73,7 @@ def assign_balances(
         save_path = original_path
 
     # Indexa barcode → linha da planilha
-    barcode_index = _build_barcode_index(ws, COL_BARCODE, DATA_START_ROW)
+    barcode_index = _build_barcode_index(ws, layout.col_chave_busca, layout.data_start_row)
 
     matched: list[str] = []
     not_found: list[str] = []
@@ -90,7 +81,7 @@ def assign_balances(
     for barcode, qty in counted.items():
         row = barcode_index.get(barcode)
         if row is not None:
-            ws[f"{COL_QTD_FISICO}{row}"] = qty
+            ws[f"{layout.col_qtd_fisico}{row}"] = qty
             matched.append(barcode)
         else:
             not_found.append(barcode)
