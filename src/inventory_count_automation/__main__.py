@@ -2,14 +2,14 @@
 
 import sys
 
-from inventory_count_automation.settings import AppConfig
+from inventory_count_automation.settings import load_config, CONFIG_PATH
 from inventory_count_automation.counter import count_barcodes, summary
 from inventory_count_automation.excel_handler import assign_balances
 from inventory_count_automation.reader import read_all_barcodes
 
 
 def main() -> None:
-    config = AppConfig()
+    config = load_config(CONFIG_PATH)
     layout = config.active
 
     print("=" * 60)

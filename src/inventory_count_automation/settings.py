@@ -1,11 +1,14 @@
-import dataclasses
-import re
 from pathlib import Path
+import dataclasses
+import tomli_w
+import tomllib
+import re
 
 # ── Diretórios (infraestrutura) ─────────────────────────
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT_DIR / "data"
 INPUT_TXT_DIR = DATA_DIR / "txt"
+CONFIG_PATH = DATA_DIR / "config.toml"
 INPUT_PLANILHA_DIR = DATA_DIR / "planilha"
 
 @dataclasses.dataclass
@@ -125,3 +128,26 @@ class AppConfig:
                 f"Disponíveis: {list(self.layouts.keys())}"
             )
         self.active_layout = name
+
+def save_config(config: AppConfig, path: Path) -> None:
+    """Salva a configuração em um arquivo TOML."""
+    with path.open("wb") as f:
+        tomli_w.dump(dataclasses.asdict(config), f)
+
+def load_config(path: Path) -> AppConfig:
+    """Carrega a configuração de um arquivo TOML."""
+    if not path.exists():
+        return AppConfig()
+
+    with path.open("rb") as f:
+        data = tomllib.load(f)
+
+    # Reconstrói os LayoutConfig a partir dos sub-dicts
+    layouts = {}
+    for name, layout_data in data.get("layouts", {}).items():
+        layouts[name] = LayoutConfig(**layout_data)
+
+    return AppConfig(
+        active_layout=data.get("active_layout", "default"),
+        layouts=layouts if layouts else {"default": LayoutConfig()}
+    )
