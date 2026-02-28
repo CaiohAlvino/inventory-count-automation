@@ -10,6 +10,7 @@ from inventory_count_automation.reader import (
     list_txt_files,
     parse_barcodes_from_file,
     read_all_barcodes,
+    ReadResult,
 )
 
 
@@ -59,24 +60,47 @@ class TestListTxtFiles:
 
 class TestParseBarcodes:
     def test_parses_valid_barcodes(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
-        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
-        assert barcodes == ["MCS000PROD001", "MCS000PROD002", "MCS000PROD001", "MCS000PROD003"]
+        result = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
+        assert result.barcodes == ["MCS000PROD001", "MCS000PROD002", "MCS000PROD001", "MCS000PROD003"]
 
     def test_ignores_invalid_lines(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
-        barcodes = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
-        assert "linha_invalida" not in barcodes
-        assert "" not in barcodes
+        result = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
+        assert "linha_invalida" not in result.barcodes
+        assert "" not in result.barcodes
+
+    def test_tracks_rejected_lines(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        result = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
+        assert "linha_invalida" in result.rejected
+        assert len(result.rejected) == 1
+
+    def test_no_rejected_when_all_valid(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        result = parse_barcodes_from_file(tmp_txt_dir / "contagem_02.txt", layout)
+        assert result.rejected == []
+        assert len(result.barcodes) == 2
 
     def test_uppercases_barcodes(self, tmp_path: Path, layout: LayoutConfig) -> None:
         f = tmp_path / "lower.txt"
         f.write_text("mcs000produto\n", encoding="utf-8")
-        barcodes = parse_barcodes_from_file(f, layout)
-        assert barcodes == ["MCS000PRODUTO"]
+        result = parse_barcodes_from_file(f, layout)
+        assert result.barcodes == ["MCS000PRODUTO"]
+
+    def test_returns_read_result_type(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        result = parse_barcodes_from_file(tmp_txt_dir / "contagem_01.txt", layout)
+        assert isinstance(result, ReadResult)
 
 
 class TestReadAllBarcodes:
     def test_consolidates_all_files(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
-        all_barcodes = read_all_barcodes(layout, tmp_txt_dir)
-        assert len(all_barcodes) == 6  # 4 do file1 + 2 do file2
-        assert all_barcodes.count("MCS000PROD001") == 2
-        assert all_barcodes.count("MCS000PROD002") == 2
+        result = read_all_barcodes(layout, tmp_txt_dir)
+        assert len(result.barcodes) == 6  # 4 do file1 + 2 do file2
+        assert result.barcodes.count("MCS000PROD001") == 2
+        assert result.barcodes.count("MCS000PROD002") == 2
+
+    def test_consolidates_rejected_lines(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        result = read_all_barcodes(layout, tmp_txt_dir)
+        assert "linha_invalida" in result.rejected
+        assert len(result.rejected) == 1
+
+    def test_returns_read_result_type(self, tmp_txt_dir: Path, layout: LayoutConfig) -> None:
+        result = read_all_barcodes(layout, tmp_txt_dir)
+        assert isinstance(result, ReadResult)

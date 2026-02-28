@@ -26,10 +26,10 @@ inventory-count-automation/
 ├── src/
 │   └── inventory_count_automation/
 │       ├── __init__.py
-│       ├── __main__.py                   # Ponto de entrada (CLI)
+│       ├── __main__.py                   # Ponto de entrada (CLI) + relatório de não identificados
 │       ├── settings.py                   # Dataclasses de configuração, persistência TOML
 │       ├── cli.py                        # Setup interativo (CRUD de layouts)
-│       ├── reader.py                     # Leitura e parsing dos arquivos .txt
+│       ├── reader.py                     # Leitura e parsing dos arquivos .txt (com rastreio de rejeitados)
 │       ├── counter.py                    # Contabilização e agrupamento dos barcodes
 │       └── excel_handler.py              # Identificação dos produtos na planilha e atribuição dos saldos
 └── tests/
@@ -64,8 +64,17 @@ O sistema opera em **3 etapas principais**:
 - Percorre a coluna configurada como **chave de busca** (`col_chave_busca`), buscando correspondência com cada barcode contabilizado.
 - Ao encontrar o barcode, **atribui o saldo** na coluna configurada como **quantidade física** (`col_qtd_fisico`).
 - Produtos que existem na planilha mas **não foram contados** permanecem inalterados.
-- Barcodes lidos nos `.txt` que **não existem na planilha** são reportados no log como "não encontrados".
+- Barcodes lidos nos `.txt` que **não existem na planilha** são reportados no relatório de não identificados.
 - As alterações são salvas diretamente na planilha.
+
+### 4. Relatório de códigos não identificados (`__main__.py`)
+
+Ao final do processamento, o sistema exibe automaticamente um **relatório detalhado** com todos os códigos que não puderam ser identificados, dividido em duas categorias:
+
+- **Linhas rejeitadas na leitura** — linhas dos arquivos `.txt` que não correspondem ao padrão de barcode configurado (prefixo/sufixo). Exibe a quantidade total de ocorrências e os valores únicos.
+- **Barcodes não encontrados na planilha** — códigos que foram lidos e contabilizados corretamente, mas não possuem correspondência na planilha cadastrada. Exibe cada código com a respectiva quantidade lida.
+
+Se todos os códigos forem identificados com sucesso, o sistema confirma que não há pendências.
 
 ---
 
@@ -172,6 +181,10 @@ O sistema carrega o layout ativo do `config.toml`, lê os `.txt`, contabiliza os
 ### 4. Resultado
 
 A planilha configurada no layout ativo será atualizada com os saldos contados na coluna de quantidade física.
+
+Ao final, um **relatório de códigos não identificados** é exibido automaticamente, listando:
+- Linhas rejeitadas durante a leitura (padrão inválido)
+- Barcodes lidos mas não encontrados na planilha (com quantidades)
 
 ---
 

@@ -10,7 +10,12 @@ from inventory_count_automation.excel_handler import assign_balances
 
 @pytest.fixture
 def layout() -> LayoutConfig:
-    return LayoutConfig()
+    return LayoutConfig(
+        col_chave_busca="G",
+        col_qtd_fisico="M",
+        header_row=2,
+        data_start_row=3,
+    )
 
 @pytest.fixture
 def sample_workbook(tmp_path: Path) -> tuple[openpyxl.Workbook, Path]:
